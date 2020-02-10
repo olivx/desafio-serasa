@@ -1,28 +1,40 @@
 import json
-
+import shelve
+from .settings import PATH_DATA_FILE, DATABASE
+from .decorators import validate_decorator, load_data_from_file
 from collections import defaultdict
-def check_violations(*args, **kwargs):
-    violatios = kwargs.get('violatios')
-    def _wrapper(func):
-        def wrapper(*args, **kwargs):
-            consumer = args[0]
-            data = defaultdict(list)
-            for violation in violatios:
-                if violation(consumer):
-                    data['violatios'].append(violation.__name__.replace('_', '-'))
-
-            return func(transaction={'transaction': 50 , **data}, *args, **kwargs)
-        return wrapper
-    return _wrapper
+from .violations import low_score, minimum_installments , compromised_income
+from .consumer import Consumer
+from datetime import datetime
 
 
-def load_data(path='data/data.json'):
-  with open(path) as json_file:
-    return json.load(json_file)
+def request_transaction(**kwargs):
+    base_values = {
+        "id" : 5,
+        "consumer_id": 10, 
+        "score": 100, 
+        "income": 4000, 
+        "requested_value": 10000,
+        "installments": 15, 
+        "time": f'{datetime.strftime(datetime.now(), "%Y-%m-%dT%H:%M:%S.%f")[:-3]}Z'
+    }
+    base_values.update(**kwargs)
+    DATABASE.append(base_values)
+
+
+@validate_decorator(violatios=[low_score, minimum_installments, compromised_income])
+def validate(consumer, transaction=None):
+    return transaction
+
+@load_data_from_file
+def show_validate_data(): 
+    for index, transaction in enumerate(DATABASE, start=1):
+        transaction.update({'id': index})
+        print(validate(Consumer(**transaction)))
 
 
 
-DATABASE = list()
+
 
 
 
