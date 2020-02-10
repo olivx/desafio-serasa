@@ -1,8 +1,9 @@
 import sys
 from  argparse import ArgumentParser
-
+from .settings import DATABASE_PATH
 from .utils import show_validate_data, request_transaction
 from .consumer import Consumer
+import shelve
 
 class Commands(object):
 
@@ -29,6 +30,7 @@ class Commands(object):
 
     def show(self):
         parser = ArgumentParser(description='show all transactions requested')
+        parser.add_argument('--reset', action='store_true')
         args = parser.parse_args(sys.argv[2:])
         show_validate_data()
 
@@ -42,7 +44,19 @@ class Commands(object):
             key, value = field.split('=')
             data[key] = value
         request_transaction(**data)
-        show_validate_data()        
+        show_validate_data()    
+
+    def reset(self): 
+        parser = ArgumentParser(description="create new request pass values like score=1000")
+        args = parser.parse_args(sys.argv[2:])
+        answer = input('you would like to reset data ? Y/N').lower()
+        if answer == 'y':
+            dabatase = shelve.open(DATABASE_PATH)
+            if 'data' in dabatase: 
+                del dabatase['data']
+                print(f'reseted transaction applications')
+                return 
+            print('any data was found in transaction application')
 
             
   
