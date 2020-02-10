@@ -1,7 +1,6 @@
 import json
-import shelve
-from .settings import PATH_DATA_FILE, DATABASE
-from .decorators import validate_decorator, load_data_from_file
+from .settings import PATH_DATA_FILE, DATA_LIST, DATABASE_PATH
+from .decorators import validate_decorator, load_data_from_file, sync_data
 from collections import defaultdict
 from .violations import low_score, minimum_installments , compromised_income
 from .consumer import Consumer
@@ -19,16 +18,17 @@ def request_transaction(**kwargs):
         "time": f'{datetime.strftime(datetime.now(), "%Y-%m-%dT%H:%M:%S.%f")[:-3]}Z'
     }
     base_values.update(**kwargs)
-    DATABASE.append(base_values)
+    DATA_LIST.append(base_values)
+
 
 
 @validate_decorator(violatios=[low_score, minimum_installments, compromised_income])
 def validate(consumer, transaction=None):
     return transaction
 
-@load_data_from_file
+@sync_data
 def show_validate_data(): 
-    for index, transaction in enumerate(DATABASE, start=1):
+    for index, transaction in enumerate(DATA_LIST, start=1):
         transaction.update({'id': index})
         print(validate(Consumer(**transaction)))
 
